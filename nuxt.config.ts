@@ -3,6 +3,9 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   modules: ['@nuxtjs/tailwindcss', '@nuxtjs/supabase'],
+  supabase: {
+    redirect: false
+  },
   css: ['~/assets/css/main.css'],
   runtimeConfig: {
     pusherAppId: process.env.PUSHER_APP_ID,
