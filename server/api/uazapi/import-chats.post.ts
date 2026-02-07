@@ -33,6 +33,10 @@ export default defineEventHandler(async (event) => {
          body: { limit: 50, offset: 0 }
      })
 
+     console.log('--- DEBUG UAZAPI RESPONSE ---')
+     console.log(JSON.stringify(chatsResponse, null, 2))
+     console.log('--- END DEBUG ---')
+
      const chats = Array.isArray(chatsResponse) ? chatsResponse : (chatsResponse.chats || [])
 
      // 3. Salvar no Supabase
