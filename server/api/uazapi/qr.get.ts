@@ -72,6 +72,7 @@ const user = await serverSupabaseUser(event)
      }
 
      // STEP 2: Conectar usando o token específico da instância (CONNECT)
+     console.log('Step 2 (Connect) Starting...')
      try {
          // Docs dizem POST em /instance/connect com header 'token'
          const connectResponse: any = await $fetch(`${uazapiUrl}/instance/connect`, {
@@ -81,6 +82,7 @@ const user = await serverSupabaseUser(event)
                  'Content-Type': 'application/json'
              }
          })
+         console.log('Step 2 (Connect) Response:', connectResponse)
          return connectResponse
 
      } catch (connectErr: any) {
