@@ -1,9 +1,10 @@
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 
-  /* 
+   /* 
      CRITICAL: Multi-tenancy Refactor
      Agora cada usuário tem sua própria instância baseada no ID.
   */
+export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)
   
   if (!user) {
