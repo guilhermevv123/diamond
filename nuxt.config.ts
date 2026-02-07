@@ -4,7 +4,9 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ['@nuxtjs/tailwindcss', '@nuxtjs/supabase'],
   supabase: {
-    redirect: false
+    redirect: false,
+    url: process.env.SUPABASE_URL,
+    key: process.env.SUPABASE_KEY
   },
   css: ['~/assets/css/main.css'],
   runtimeConfig: {

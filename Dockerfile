@@ -31,4 +31,4 @@ ENV NUXT_HOST=0.0.0.0
 ENV NUXT_PORT=3000
 
 # Start command
-CMD ["node", ".output/server/index.mjs"]
+CMD ["sh", "-c", "echo '--- DOCKER STARTUP ENV CHECK ---'; printenv | grep SUPABASE || echo 'SUPABASE VARS NOT FOUND'; node .output/server/index.mjs"]
