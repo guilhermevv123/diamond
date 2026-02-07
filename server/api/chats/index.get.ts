@@ -9,6 +9,12 @@ export default defineEventHandler(async (event) => {
     .order('created_at', { ascending: false })
 
   if (error) {
+      console.error('Chats API Error:', error)
+  } else {
+      console.log(`Chats API: Retornando ${chats?.length || 0} chats.`)
+  }
+
+  if (error) {
     throw createError({
         statusCode: 500,
         message: 'Error fetching chats',
