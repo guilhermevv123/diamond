@@ -82,31 +82,89 @@ const status = ref('open') // open (qr), connecting, connected
 const qrCode = ref('')
 const error = ref('')
 
+
+let statusInterval: any = null
+
 onMounted(async () => {
     fetchQRCode()
+    startStatusPolling()
 })
+
+onUnmounted(() => {
+    stopStatusPolling()
+})
+
+const startStatusPolling = () => {
+    stopStatusPolling()
+    statusInterval = setInterval(checkConnectionStatus, 3000)
+}
+
+const stopStatusPolling = () => {
+    if (statusInterval) clearInterval(statusInterval)
+}
+
+const checkConnectionStatus = async () => {
+    try {
+        const res: any = await $fetch('/api/uazapi/status')
+        console.log('Status Check:', res)
+        
+        // Status possíveis da UAZAPI/Baileys: 'open', 'connecting', 'connected', 'close'
+        // 'open' geralmente é conectado/pronto nas versoes antigas, mas nas novas:
+        // 'open' = QR, 'connecting' = conectando, 'close' = conectado (as vezes confunde)
+        // Vamos checar o que vier. Se for 'connected' ou 'open' com QR null...
+        
+        const state = res.status || res.state
+        
+        if (state === 'connected' || state === 'open') {
+             // Se estiver open, precisamos garantir que não é open DE QR CODE
+             // Geralmente 'open' no Baileys significa conexão aberta (sucesso).
+             // Vamos checar se o QR sumiu ou se mudou o status visual
+             
+             // Se vier explicitamente 'connected' ou se já tiver token e não erro
+             status.value = 'connected'
+             stopStatusPolling()
+             
+             // Espera 2s para o usuário ver o sucesso e fecha
+             setTimeout(() => {
+                 emit('close')
+                 // Recarrega a página ou chats para pegar o histórico que chegou
+                 window.location.reload() 
+             }, 2000)
+        }
+    } catch (e) {
+        console.error('Erro ao checar status:', e)
+    }
+}
 
 const fetchQRCode = async () => {
     try {
         qrCode.value = ''
         error.value = ''
+        status.value = 'open' // Reset status visual
         
         const data: any = await $fetch('/api/uazapi/qr')
-        
+        console.log('QR Data:', data)
+
         // Tenta encontrar o QR em vários formatos possíveis
         if (data.base64) qrCode.value = data.base64
         else if (data.qrcode) qrCode.value = data.qrcode
-        else if (data.instance?.qrcode) qrCode.value = data.instance.qrcode // <--- Novo formato detectado
+        else if (data.instance?.qrcode) qrCode.value = data.instance.qrcode 
         else if (data.code) qrCode.value = data.code
         else if (data.urlCode) qrCode.value = data.urlCode
         else if (data.qr) qrCode.value = data.qr
-        // Caso venha aninhado (algumas versões da API)
         else if (data.data?.qrcode) qrCode.value = data.data.qrcode
         else if (data.data?.base64) qrCode.value = data.data.base64
         else {
+            // Se não veio QR, pode estar conectado já?
+            if (data.instance?.state === 'open' || data.instance?.state === 'connected') {
+                 status.value = 'connected'
+                 stopStatusPolling()
+                 setTimeout(() => emit('close'), 1500)
+                 return
+            }
+            
             console.warn('Formato de QR não reconhecido', data)
-            // Mostra o erro na tela para debug
-            error.value = 'Formato desconhecido: ' + JSON.stringify(data).slice(0, 100) + '...'
+            error.value = 'Aguardando QR Code...'
         }
     } catch (e) {
         console.error('Erro ao carregar QR:', e)
@@ -118,5 +176,6 @@ const disconnect = () => {
     status.value = 'open'
     qrCode.value = ''
     fetchQRCode()
+    startStatusPolling()
 }
 </script>
