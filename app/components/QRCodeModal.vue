@@ -105,7 +105,8 @@ const stopStatusPolling = () => {
 
 const checkConnectionStatus = async () => {
     try {
-        const res: any = await $fetch('/api/uazapi/status')
+        const headers = useRequestHeaders(['cookie'])
+        const res: any = await $fetch('/api/uazapi/status', { headers })
         console.log('Status Check:', res)
         
         // Status possíveis da UAZAPI/Baileys: 'open', 'connecting', 'connected', 'close'
@@ -142,7 +143,9 @@ const fetchQRCode = async () => {
         error.value = ''
         status.value = 'open' // Reset status visual
         
-        const data: any = await $fetch('/api/uazapi/qr')
+        // Usar useRequestHeaders para garantir que o cookie do Supabase seja enviado
+        const headers = useRequestHeaders(['cookie'])
+        const data: any = await $fetch('/api/uazapi/qr', { headers })
         console.log('QR Data:', data)
 
         // Tenta encontrar o QR em vários formatos possíveis

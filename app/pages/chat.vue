@@ -325,7 +325,8 @@ const chats = ref<any[]>([])
 // Fetch Chats on Mount
 const refreshChats = async () => {
   try {
-    const data = await $fetch('/api/chats')
+    const headers = useRequestHeaders(['cookie'])
+    const data = await $fetch('/api/chats', { headers })
     chats.value = data.map((c: any) => ({
       ...c,
       messages: [] // Initialize empty messages array
@@ -336,7 +337,11 @@ const refreshChats = async () => {
     if (chats.value.length === 0) {
         console.log('Lista vazia. Iniciando importação automática...')
         try {
-            const importResult: any = await $fetch('/api/uazapi/import-chats', { method: 'POST' })
+            const headers = useRequestHeaders(['cookie'])
+            const importResult: any = await $fetch('/api/uazapi/import-chats', { 
+                method: 'POST',
+                headers
+            })
             if (importResult.success && importResult.count > 0) {
                 console.log(`Importados ${importResult.count} chats. Atualizando...`)
                 // Chama refresh de novo para mostrar os novos chats
