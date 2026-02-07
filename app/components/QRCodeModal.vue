@@ -70,7 +70,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 
 const props = defineProps<{
   instanceName?: string
@@ -103,6 +103,7 @@ const stopStatusPolling = () => {
     if (statusInterval) clearInterval(statusInterval)
 }
 
+const checkConnectionStatus = async () => {
     try {
         const client = useSupabaseClient()
         const { data: { session } } = await client.auth.getSession()
@@ -111,29 +112,18 @@ const stopStatusPolling = () => {
         const headers: any = {}
         if (token) headers.Authorization = `Bearer ${token}`
 
-        const res: any = await $fetch('/api/uazapi/status', { headers })
+        const res: any = await $fetch('/api/evolution/status', { headers })
         console.log('Status Check:', res)
         
-        // Status possíveis da UAZAPI/Baileys: 'open', 'connecting', 'connected', 'close'
-        // 'open' geralmente é conectado/pronto nas versoes antigas, mas nas novas:
-        // 'open' = QR, 'connecting' = conectando, 'close' = conectado (as vezes confunde)
-        // Vamos checar o que vier. Se for 'connected' ou 'open' com QR null...
+        // Evolution v2 status check
+        // Retorna: { instance: { state: 'open' | 'connecting' | 'close' } }
+        const state = res.instance?.state || res.state || 'close'
         
-        const state = res.status || res.state
-        
-        if (state === 'connected' || state === 'open') {
-             // Se estiver open, precisamos garantir que não é open DE QR CODE
-             // Geralmente 'open' no Baileys significa conexão aberta (sucesso).
-             // Vamos checar se o QR sumiu ou se mudou o status visual
-             
-             // Se vier explicitamente 'connected' ou se já tiver token e não erro
+        if (state === 'open' || state === 'connected') { 
              status.value = 'connected'
              stopStatusPolling()
-             
-             // Espera 2s para o usuário ver o sucesso e fecha
              setTimeout(() => {
                  emit('close')
-                 // Recarrega a página ou chats para pegar o histórico que chegou
                  window.location.reload() 
              }, 2000)
         }
@@ -156,29 +146,21 @@ const fetchQRCode = async () => {
         const headers: any = {}
         if (token) headers.Authorization = `Bearer ${token}`
 
-        const data: any = await $fetch('/api/uazapi/qr', { headers })
-        console.log('QR Data:', data)
+        const data: any = await $fetch('/api/evolution/connect', { headers })
+        console.log('QR Data (Evolution):', data)
 
-        // Tenta encontrar o QR em vários formatos possíveis
+        // Evolution v2 keys: qrcode (obj) -> base64
+        // OU direto base64, ou 'qrcode' string
         if (data.base64) qrCode.value = data.base64
-        else if (data.qrcode) qrCode.value = data.qrcode
-        else if (data.instance?.qrcode) qrCode.value = data.instance.qrcode 
-        else if (data.code) qrCode.value = data.code
-        else if (data.urlCode) qrCode.value = data.urlCode
-        else if (data.qr) qrCode.value = data.qr
-        else if (data.data?.qrcode) qrCode.value = data.data.qrcode
-        else if (data.data?.base64) qrCode.value = data.data.base64
-        else {
-            // Se não veio QR, pode estar conectado já?
-            if (data.instance?.state === 'open' || data.instance?.state === 'connected') {
-                 status.value = 'connected'
-                 stopStatusPolling()
-                 setTimeout(() => emit('close'), 1500)
-                 return
-            }
-            
-            console.warn('Formato de QR não reconhecido', data)
-            error.value = 'Aguardando QR Code...'
+        else if (data.qrcode?.base64) qrCode.value = data.qrcode.base64
+        else if (typeof data.qrcode === 'string') qrCode.value = data.qrcode
+        else if (data.instance?.state === 'open') {
+             status.value = 'connected'
+             stopStatusPolling()
+             setTimeout(() => emit('close'), 1500)
+        } else {
+             console.warn('QR Code não encontrado na resposta Evolution', data)
+             error.value = 'Aguardando QR Code...'
         }
     } catch (e) {
         console.error('Erro ao carregar QR:', e)
