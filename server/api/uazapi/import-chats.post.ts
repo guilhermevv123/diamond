@@ -1,11 +1,12 @@
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient } from '#supabase/server'
+import { getAuthenticatedUser } from '../../utils/auth'
 
    /* 
      CRITICAL: Multi-tenancy Refactor
      Agora cada usuário tem sua própria instância baseada no ID.
   */
 export default defineEventHandler(async (event) => {
-  const user = await serverSupabaseUser(event)
+  const user = await getAuthenticatedUser(event)
   
   if (!user) {
     throw createError({ statusCode: 401, message: 'Usuário não autenticado' })

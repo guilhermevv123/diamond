@@ -325,7 +325,13 @@ const chats = ref<any[]>([])
 // Fetch Chats on Mount
 const refreshChats = async () => {
   try {
-    const headers = useRequestHeaders(['cookie'])
+    const client = useSupabaseClient()
+    const { data: { session } } = await client.auth.getSession()
+    const token = session?.access_token
+
+    const headers: any = {}
+    if (token) headers.Authorization = `Bearer ${token}`
+
     const data = await $fetch('/api/chats', { headers })
     chats.value = data.map((c: any) => ({
       ...c,
@@ -337,7 +343,13 @@ const refreshChats = async () => {
     if (chats.value.length === 0) {
         console.log('Lista vazia. Iniciando importação automática...')
         try {
-            const headers = useRequestHeaders(['cookie'])
+            const client = useSupabaseClient()
+            const { data: { session } } = await client.auth.getSession()
+            const token = session?.access_token
+
+            const headers: any = {}
+            if (token) headers.Authorization = `Bearer ${token}`
+
             const importResult: any = await $fetch('/api/uazapi/import-chats', { 
                 method: 'POST',
                 headers

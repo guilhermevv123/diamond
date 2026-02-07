@@ -1,7 +1,7 @@
-import { serverSupabaseUser } from '#supabase/server'
+import { getAuthenticatedUser } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const user = await serverSupabaseUser(event)
+  const user = await getAuthenticatedUser(event)
   
   if (!user) {
     throw createError({ statusCode: 401, message: 'Usuário não autenticado' })

@@ -103,9 +103,14 @@ const stopStatusPolling = () => {
     if (statusInterval) clearInterval(statusInterval)
 }
 
-const checkConnectionStatus = async () => {
     try {
-        const headers = useRequestHeaders(['cookie'])
+        const client = useSupabaseClient()
+        const { data: { session } } = await client.auth.getSession()
+        const token = session?.access_token
+
+        const headers: any = {}
+        if (token) headers.Authorization = `Bearer ${token}`
+
         const res: any = await $fetch('/api/uazapi/status', { headers })
         console.log('Status Check:', res)
         
@@ -143,8 +148,14 @@ const fetchQRCode = async () => {
         error.value = ''
         status.value = 'open' // Reset status visual
         
-        // Usar useRequestHeaders para garantir que o cookie do Supabase seja enviado
-        const headers = useRequestHeaders(['cookie'])
+        // Usar Token Bearer explícito para garantir autenticação
+        const client = useSupabaseClient()
+        const { data: { session } } = await client.auth.getSession()
+        const token = session?.access_token
+
+        const headers: any = {}
+        if (token) headers.Authorization = `Bearer ${token}`
+
         const data: any = await $fetch('/api/uazapi/qr', { headers })
         console.log('QR Data:', data)
 
