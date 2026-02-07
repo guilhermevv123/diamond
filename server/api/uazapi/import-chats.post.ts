@@ -1,12 +1,18 @@
-import { serverSupabaseClient } from '#supabase/server'
+import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 
-export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig()
-  const supabase = await serverSupabaseClient(event)
+  /* 
+     CRITICAL: Multi-tenancy Refactor
+     Agora cada usuário tem sua própria instância baseada no ID.
+  */
+  const user = await serverSupabaseUser(event)
+  
+  if (!user) {
+    throw createError({ statusCode: 401, message: 'Usuário não autenticado' })
+  }
   
   const uazapiUrl = process.env.UAZAPI_URL
   const adminToken = process.env.UAZAPI_TOKEN 
-  const instanceName = process.env.UAZAPI_INSTANCE_NAME || 'crm-production'
+  const instanceName = `user_${user.id.replace(/-/g, '')}`
 
   if (!uazapiUrl || !adminToken) {
     throw createError({ statusCode: 500, message: 'Server config missing' })

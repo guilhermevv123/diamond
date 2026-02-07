@@ -1,9 +1,19 @@
+import { serverSupabaseUser } from '#supabase/server'
+
+
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig()
+const user = await serverSupabaseUser(event)
+  
+  if (!user) {
+    throw createError({ statusCode: 401, message: 'Usuário não autenticado' })
+  }
+
+  // Nome da instância baseado no ID do usuário (ex: user_12345)
+  // Removemos hífens para garantir compatibilidade com nomes de instância
+  const instanceName = `user_${user.id.replace(/-/g, '')}`
   
   const uazapiUrl = process.env.UAZAPI_URL
-  const adminToken = process.env.UAZAPI_TOKEN // Admin/Global Token MUST be used for init
-  const instanceName = process.env.UAZAPI_INSTANCE_NAME || 'crm-production'
+  const adminToken = process.env.UAZAPI_TOKEN
 
   if (!uazapiUrl || !adminToken) {
     throw createError({
