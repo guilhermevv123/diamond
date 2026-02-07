@@ -15,6 +15,7 @@ export default defineNuxtConfig({
         url: process.env.SUPABASE_URL || '',
         key: process.env.SUPABASE_KEY || '',
       },
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
       pusherKey: process.env.PUSHER_KEY,
       pusherCluster: process.env.PUSHER_CLUSTER,
     }

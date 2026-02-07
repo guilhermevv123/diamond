@@ -109,6 +109,35 @@ const user = await serverSupabaseUser(event)
          return handleError('Connect Instance', connectErr)
      }
 
+     // STEP 3: Configurar Webhook Automaticamente (AUTO-CONFIG)
+     try {
+         const siteUrl = config.public.siteUrl
+         // Só configura se tiver uma URL válida (não localhost) ou se for forçado
+         if (siteUrl && !siteUrl.includes('localhost')) {
+             console.log('Step 3 (Webhook) Starting... URL:', siteUrl)
+             const webhookUrl = `${siteUrl}/api/webhooks/whatsapp`
+             
+             await $fetch(`${uazapiUrl}/webhook`, {
+                 method: 'POST',
+                 headers: {
+                     'token': instanceToken,
+                     'Content-Type': 'application/json'
+                 },
+                 body: {
+                     enabled: true,
+                     url: webhookUrl,
+                     events: ['messages.upsert', 'history', 'messages.update'],
+                 }
+             })
+             console.log('Step 3 (Webhook) Success! Configured to:', webhookUrl)
+         } else {
+            console.log('Step 3 (Webhook) Skipped: SITE_URL suggests localhost or missing.')
+         }
+     } catch (webhookErr: any) {
+         console.error('Step 3 (Webhook) Failed:', webhookErr.message)
+         // Não falhamos o request principal se o webhook falhar, apenas logamos
+     }
+
   } catch (error: any) {
     return handleError('Process Request', error)
   }
